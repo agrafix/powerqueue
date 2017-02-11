@@ -1,4 +1,5 @@
 packages:
   powerqueue/*.cabal
+  powerqueue-levelmem/*.cabal
 
 benchmarks: False
