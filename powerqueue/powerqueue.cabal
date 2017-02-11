@@ -1,7 +1,7 @@
 name:                powerqueue
 version:             0.1.0.0
-synopsis:            A flexible job queue with exchangable backends
-description:         A flexible job queue with exchangable backends
+synopsis:            A flexible job queue with exchangeable backends
+description:         A flexible job queue with exchangeable backends
 homepage:            https://github.com/agrafix/powerqueue#readme
 license:             BSD3
 license-file:        LICENSE
