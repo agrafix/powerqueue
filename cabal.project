@@ -1,0 +1,4 @@
+packages:
+  powerqueue/*.cabal
+
+benchmarks: False
