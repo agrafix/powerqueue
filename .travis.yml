@@ -1,4 +1,4 @@
-language: generic
+language: cpp
 sudo: false
 
 cache:
