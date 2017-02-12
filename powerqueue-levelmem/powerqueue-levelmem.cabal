@@ -31,7 +31,7 @@ library
               , list-t >= 1
   default-language:    Haskell2010
 
-test-suite powerqueue-test
+test-suite powerqueue-levelmem-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
