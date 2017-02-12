@@ -23,7 +23,6 @@ matrix:
 before_install:
   - chmod +x scripts/ci.sh
   - mkdir -p ~/.local/bin
-  - unset CC
   - case "$BUILD" in
        stack)
          export PATH=$HOME/.local/bin:/opt/ghc/$GHCVER/bin:$PATH;
