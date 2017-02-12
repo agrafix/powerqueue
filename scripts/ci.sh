@@ -13,7 +13,8 @@ case "$step" in
         tar -xzf v1.19.tar.gz
         cd leveldb-1.19
         make
-        sudo mv libleveldb.* /usr/local/lib
+        sudo mv out-static/libleveldb.* /usr/local/lib
+        sudo mv out-shared/libleveldb.* /usr/local/lib
         cd include
         sudo cp -R leveldb /usr/local/include
         sudo ldconfig
