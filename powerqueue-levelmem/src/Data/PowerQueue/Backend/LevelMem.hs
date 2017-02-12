@@ -268,8 +268,8 @@ newLevelMemBackend levelMem =
     , qb_rollback = flip nack levelMem
     }
 
-enqueue :: j -> LevelMem j -> IO ()
-enqueue job LevelMem{..} =
+enqueue :: j -> LevelMem j -> IO Bool
+enqueue job lm@LevelMem{..} =
     do ix <-
            atomically $
            do key <- readTVar lm_queueKey
@@ -277,7 +277,9 @@ enqueue job LevelMem{..} =
               writeTVar lm_queueKey (key+1)
               writeTQueue lm_persistQueue (QaEnqueue key job)
               return key
-       C.writeChan (fst lm_queue) ix
+       ok <- C.tryWriteChan (fst lm_queue) ix
+       unless ok $ ack ix lm
+       pure ok
 
 dequeue :: LevelMem j -> IO (JobIdx, j)
 dequeue lm@LevelMem{..} =

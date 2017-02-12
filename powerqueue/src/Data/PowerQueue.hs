@@ -38,7 +38,7 @@ data QueueBackend j
     QueueBackend
     { qb_lift :: forall a. m a -> IO a
       -- ^ lift an action from the backend monad into 'IO'
-    , qb_enqueue :: j -> m ()
+    , qb_enqueue :: j -> m Bool
       -- ^ enqueue a job
     , qb_dequeue :: m (tx, j)
       -- ^ dequeue a single job, block if no job available
@@ -68,7 +68,7 @@ basicChanBackend =
        pure
            QueueBackend
            { qb_lift = id
-           , qb_enqueue = C.writeChan jobChannel
+           , qb_enqueue = \x -> C.writeChan jobChannel x >> pure True
            , qb_dequeue =
                    do nextJob <- C.readChan jobChannel
                       atomicModifyIORef' inProgress (dequeueHandler nextJob)
@@ -146,7 +146,7 @@ newQueue qb qw =
     }
 
 -- | Add a 'Job' to the 'Queue'
-enqueueJob :: j -> Queue j -> IO ()
+enqueueJob :: j -> Queue j -> IO Bool
 enqueueJob j q =
     let enqueue QueueBackend{..} = qb_lift (qb_enqueue j)
     in enqueue (q_backend q)

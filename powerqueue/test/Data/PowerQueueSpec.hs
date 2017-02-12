@@ -44,7 +44,7 @@ specLocalWorker =
     do ref <- atomically $ newTVar 0
        queue <- dummyStmCounterQueue ref
        handler <- async $ localQueueWorker (LocalWorkerConfig 10) queue
-       replicateM_ 100 $ enqueueJob () queue
+       replicateM_ 100 $ enqueueJob () queue `shouldReturn` True
        result <-
            atomically $
            do val <- readTVar ref
@@ -59,7 +59,7 @@ specCore =
     do it "providing 100 jobs and stepping 100 times works" $
            do ref <- newIORef 0
               queue <- dummyCounterQueue ref
-              replicateM_ 100 $ enqueueJob () queue
+              replicateM_ 100 $ enqueueJob () queue `shouldReturn` True
               replicateM_ 100 $ workStep queue
               result <- readIORef ref
               result `shouldBe` 100
@@ -83,7 +83,7 @@ specCore =
                          when x $ writeIORef out True
                          pure (if x then JOk else JRetry)
               let queue = newQueue be worker
-              enqueueJob () queue
+              enqueueJob () queue `shouldReturn` True
               workStep queue
               workStep queue
               result <- readIORef out
@@ -101,7 +101,7 @@ specCore =
                          writeIORef out True
                          pure JOk
               let queue = newQueue be worker
-              enqueueJob () queue
+              enqueueJob () queue `shouldReturn` True
               workStep queue
               workStep queue
               result <- readIORef out
