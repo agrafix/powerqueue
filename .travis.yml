@@ -1,5 +1,5 @@
 language: cpp
-sudo: false
+sudo: true
 
 cache:
   directories:
@@ -12,16 +12,17 @@ matrix:
   include:
     - env: BUILD=stack STACK_BUILD_MODE="test" STACK_BUILD_ARGS="--bench --no-run-benchmarks" STACK_ARGS="" STACK_YAML=stack.yaml
       compiler: ": #stack 8.0.1"
-      addons: {apt: {packages: [libgmp-dev,libleveldb-dev,libsnappy-dev,build-essential,libstdc++6]}}
+      addons: {apt: {packages: [libgmp-dev,libsnappy-dev,build-essential,libstdc++6]}}
     - env: BUILD=stack STACK_BUILD_MODE="test" STACK_BUILD_ARGS="--bench --no-run-benchmarks" STACK_ARGS="--resolver nightly" STACK_YAML=stack.yaml
       compiler: ": #stack 8.0.2"
-      addons: {apt: {packages: [libgmp-dev,libleveldb-dev,libsnappy-dev,build-essential,libstdc++6]}}
+      addons: {apt: {packages: [libgmp-dev,libsnappy-dev,build-essential,libstdc++6]}}
     - env: BUILD=cabal CABALVER=1.24 GHCVER=8.0.1
       compiler: ": #GHC 8.0.1"
-      addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1,libleveldb-dev,libsnappy-dev,build-essential,libstdc++6], sources: [hvr-ghc]}}
+      addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1,libsnappy-dev,build-essential,libstdc++6], sources: [hvr-ghc]}}
 
 before_install:
   - chmod +x scripts/ci.sh
+  - scripts/ci.sh "leveldb"
   - mkdir -p ~/.local/bin
   - case "$BUILD" in
        stack)

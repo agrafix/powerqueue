@@ -8,6 +8,16 @@ step="$1"
 echo "Running step $step ..."
 
 case "$step" in
+    leveldb)
+        wget https://github.com/google/leveldb/archive/v1.19.tar.gz
+        tar -xzf v1.19.tar.gz
+        cd leveldb-1.19
+        make
+        sudo mv libleveldb.* /usr/local/lib
+        cd include
+        sudo cp -R leveldb /usr/local/include
+        sudo ldconfig
+        ;;
     install)
         mkdir -p $HOME/.local/bin
         case "$BUILD" in
