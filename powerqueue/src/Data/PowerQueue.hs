@@ -6,7 +6,7 @@ module Data.PowerQueue
     ( -- * Worker descriptions
       QueueWorker, newQueueWorker, JobResult(..)
       -- * Queue control
-    , Queue, newQueue, enqueueJob
+    , Queue, newQueue, mapQueue, enqueueJob
       -- * (persistent) queue backends
     , QueueBackend(..), mapBackend, basicChanBackend
       -- * execution strategies
@@ -128,6 +128,13 @@ data Queue j
     = Queue
     { q_worker :: !(QueueWorker j)
     , q_backend :: !(QueueBackend j)
+    }
+
+mapQueue :: (a -> b) -> (b -> a) -> Queue a -> Queue b
+mapQueue f g q =
+    Queue
+    { q_worker = contramap g (q_worker q)
+    , q_backend = mapBackend f g (q_backend q)
     }
 
 -- | Create a new queue description
