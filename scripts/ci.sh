@@ -5,9 +5,6 @@ set -x
 
 step="$1"
 
-export CXX="g++"
-export CC="g++"
-
 echo "Running step $step ..."
 
 case "$step" in
