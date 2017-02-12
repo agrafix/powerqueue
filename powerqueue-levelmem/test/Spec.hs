@@ -1,7 +1,7 @@
 import Test.Hspec
+import qualified Data.PowerQueue.Backend.LevelMemSpec
 
 main :: IO ()
 main =
     hspec $
-    describe "TODO" $
-    it "TODO" $ putStrLn "No tests"
+    Data.PowerQueue.Backend.LevelMemSpec.spec
