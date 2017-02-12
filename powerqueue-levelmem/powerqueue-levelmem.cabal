@@ -29,6 +29,7 @@ library
               , bytestring >= 0.10
               , dlist >= 0.8
               , list-t >= 1
+              , filepath >= 1.4
   default-language:    Haskell2010
 
 test-suite powerqueue-levelmem-test

@@ -35,14 +35,23 @@ binEncoding =
     }
 
 withTmpDir :: (FilePath -> IO a) -> IO a
-withTmpDir action = withSystemTempDirectory "lmstestsXXX" action
+withTmpDir = withSystemTempDirectory "lmstestsXXX"
+
+testCfg ::  S.Serialize a => FilePath -> LevelMemCfg a
+testCfg fp =
+    LevelMemCfg
+    { lmc_storageDir = fp
+    , lmc_maxQueueSize = 100
+    , lmc_jobEncoding = binEncoding
+    , lmc_inProgressRecovery = IpRestart
+    }
 
 spec :: Spec
 spec =
     describe "Level Mem Backend" $
     do it "providing 100 jobs and stepping 100 times works" $
            withTmpDir $ \tmpDir ->
-           withLevelMem tmpDir 100 binEncoding $ \lm ->
+           withLevelMem (testCfg tmpDir) $ \lm ->
            do ref <- newIORef 0
               let queue = dummyCounterQueue (newLevelMemBackend lm) ref
               replicateM_ 100 $ enqueueJob () queue
@@ -52,11 +61,11 @@ spec =
        it "synchronous recovery works" $
            withTmpDir $ \tmpDir ->
            do ref <- newIORef 0
-              withLevelMem tmpDir 100 binEncoding $ \lm ->
+              withLevelMem (testCfg tmpDir) $ \lm ->
                   do let queue = dummyCounterQueue (newLevelMemBackend lm) ref
                      replicateM_ 100 $ enqueueJob () queue
                      replicateM_ 50 $ workStep queue
-              withLevelMem tmpDir 100 binEncoding $ \lm ->
+              withLevelMem (testCfg tmpDir) $ \lm ->
                   do statusMap <- getJobStatusMap lm
                      length statusMap `shouldBe` 50
                      let queue = dummyCounterQueue (newLevelMemBackend lm) ref
@@ -66,13 +75,13 @@ spec =
        it "asynchronous working and recovery works" $
            withTmpDir $ \tmpDir ->
            do ref <- newIORef []
-              withLevelMem tmpDir 100 binEncoding $ \lm ->
+              withLevelMem (testCfg tmpDir) $ \lm ->
                   do let queue = dummyReverseAccumQueue (newLevelMemBackend lm) ref
                      adder <- async $ forConcurrently_ [1..100] $ \idx -> enqueueJob idx queue
                      worker <- async $ replicateConcurrently_ 10 $ replicateM_ 5 $ workStep queue
                      wait adder
                      wait worker
-              withLevelMem tmpDir 100 binEncoding $ \lm ->
+              withLevelMem (testCfg tmpDir) $ \lm ->
                   do statusMap <- getJobStatusMap lm
                      length statusMap `shouldBe` 50
                      let queue = dummyReverseAccumQueue (newLevelMemBackend lm) ref

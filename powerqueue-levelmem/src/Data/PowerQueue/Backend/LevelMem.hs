@@ -3,7 +3,7 @@
 {-# LANGUAGE BangPatterns #-}
 module Data.PowerQueue.Backend.LevelMem
     ( -- * Data container
-      withLevelMem, JobEncoding(..), LevelMem
+      withLevelMem, LevelMemCfg(..), InProgressCfg(..), JobEncoding(..), LevelMem
     , JobStatus(..), getJobStatusMap, getJobStatus
       -- * Actual backend for powerqueue
     , newLevelMemBackend
@@ -18,6 +18,7 @@ import Data.Maybe
 import Data.Monoid
 import Data.PowerQueue
 import Data.Word
+import System.FilePath
 import qualified Control.Concurrent.Chan.Unagi.Bounded as C
 import qualified Data.ByteString as BS
 import qualified Data.DList as DL
@@ -103,18 +104,23 @@ databaseWorker db serJob termV q =
           else pure ()
 
 databaseRecovery ::
-    TVar JobIdx
+    InProgressCfg
+    -> TVar JobIdx
     -> SMap.Map JobIdx j
     -> Chan JobIdx
     -> SSet.Set JobIdx
     -> (BS.ByteString -> Either String j)
     -> L.DB
     -> IO ()
-databaseRecovery jobIdxV jobMap jobQueue progresSet parseJob db =
+databaseRecovery inPCfg jobIdxV jobMap jobQueue progressSet parseJob db =
     L.withIter db L.defaultReadOptions $ \it ->
     do populateMap it
+       populateSet it 2 "p_" $ \jobIdx ->
+           case inPCfg of
+             IpRecover -> atomically $ SSet.insert jobIdx progressSet
+             IpRestart -> C.writeChan (fst jobQueue) jobIdx
+             IpForget -> atomically $ SMap.delete jobIdx jobMap
        populateSet it 2 "q_" $ C.writeChan (fst jobQueue)
-       populateSet it 2 "p_" $ atomically . flip SSet.insert progresSet
     where
       populateMap it =
           do L.iterSeek it "map_"
@@ -157,20 +163,43 @@ data JobEncoding j
     , j_decode :: BS.ByteString -> Either String j
     }
 
+-- | Behavoir for in progress jobs after loading the state from disk on launch
+data InProgressCfg
+    = IpRecover
+      -- ^ mark the job as in progress
+    | IpRestart
+      -- ^ add the job to the queue
+    | IpForget
+      -- ^ discard the job
+
+data LevelMemCfg j
+    = LevelMemCfg
+    { lmc_storageDir :: !FilePath
+      -- ^ directory for persistence
+    , lmc_maxQueueSize :: !Int
+      -- ^ maximum size of queue, succeeding enqueues will block
+    , lmc_jobEncoding :: !(JobEncoding j)
+      -- ^ binary encoding of jobs
+    , lmc_inProgressRecovery :: !InProgressCfg
+      -- ^ how should in progress jobs be handled after a restart while loading from disk
+    }
+
 -- | Create a new data container for in memory job tracking and leveldb disk persistence.
 -- Provide a 'FilePath' for storing the data, an 'Int' as maximum queue size and
 -- a 'JobEncoding' for individual job encoding.
-withLevelMem :: FilePath -> Int -> JobEncoding j -> (LevelMem j -> IO a) -> IO a
-withLevelMem dbLoc uBound JobEncoding{..} action =
-    L.withDB dbLoc opts $ \dbHandle ->
+withLevelMem :: LevelMemCfg j -> (LevelMem j -> IO a) -> IO a
+withLevelMem LevelMemCfg{..} action =
+    L.withDB (lmc_storageDir </> "queue.db") opts $ \dbHandle ->
     do queueKey <- newTVarIO 0
        jobMap <- SMap.newIO
-       jobQueue <- C.newChan uBound
+       jobQueue <- C.newChan lmc_maxQueueSize
        progressSet <- SSet.newIO
-       databaseRecovery queueKey jobMap jobQueue progressSet j_decode dbHandle
+       databaseRecovery
+           lmc_inProgressRecovery queueKey jobMap jobQueue progressSet
+           (j_decode lmc_jobEncoding) dbHandle
        persistQueue <- newTQueueIO
        termVar <- newTVarIO Continue
-       let alloc = async $ databaseWorker dbHandle j_encode termVar persistQueue
+       let alloc = async $ databaseWorker dbHandle (j_encode lmc_jobEncoding) termVar persistQueue
            dealloc aHandle =
                do atomically $ writeTVar termVar Terminate
                   wait aHandle

@@ -19,10 +19,19 @@ nopWorker :: QueueBackend () -> Queue ()
 nopWorker be =
     newQueue be $ newQueueWorker $ \() -> pure JOk
 
+testCfg ::  S.Serialize a => FilePath -> LevelMemCfg a
+testCfg fp =
+    LevelMemCfg
+    { lmc_storageDir = fp
+    , lmc_maxQueueSize = 200000
+    , lmc_jobEncoding = binEncoding
+    , lmc_inProgressRecovery = IpRestart
+    }
+
 main :: IO ()
 main =
     withSystemTempDirectory "lmsbenchXXX" $ \tempDir ->
-    withLevelMem tempDir 200000 binEncoding $ \lm ->
+    withLevelMem (testCfg tempDir) $ \lm ->
     do let q = nopWorker (newLevelMemBackend lm)
        putStrLn "Filling queue with 100k entries"
        replicateM_ 100000 $ enqueueJob () q
