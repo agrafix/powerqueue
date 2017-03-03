@@ -2,6 +2,14 @@ name:                powerqueue
 version:             0.1.1.0
 synopsis:            A flexible job queue with exchangeable backends
 description:         A flexible job queue with exchangeable backends
+                     .
+                     Current Queue (Persistence) Backends:
+                     .
+                     * <https://hackage.haskell.org/package/powerqueue-levelmem LevelDB>
+                     .
+                     Current Worker Backends:
+                     .
+                     * <https://hackage.haskell.org/package/powerqueue-distributed TCP-Network Distributed>
 homepage:            https://github.com/agrafix/powerqueue#readme
 license:             BSD3
 license-file:        LICENSE
