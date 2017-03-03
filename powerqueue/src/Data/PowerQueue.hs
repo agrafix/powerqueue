@@ -4,9 +4,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Data.PowerQueue
     ( -- * Worker descriptions
-      QueueWorker, newQueueWorker, JobResult(..)
+      QueueWorker(..), newQueueWorker, JobResult(..)
       -- * Queue control
-    , Queue, newQueue, mapQueue, enqueueJob
+    , Queue, newQueue, mapQueue, enqueueJob, getQueueBackend, getQueueWorker
       -- * (persistent) queue backends
     , QueueBackend(..), mapBackend, basicChanBackend
       -- * execution strategies
@@ -129,6 +129,12 @@ data Queue j
     { q_worker :: !(QueueWorker j)
     , q_backend :: !(QueueBackend j)
     }
+
+getQueueWorker :: Queue j -> QueueWorker j
+getQueueWorker = q_worker
+
+getQueueBackend :: Queue j -> QueueBackend j
+getQueueBackend = q_backend
 
 mapQueue :: (a -> b) -> (b -> a) -> Queue a -> Queue b
 mapQueue f g q =

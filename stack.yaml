@@ -2,5 +2,7 @@ resolver: lts-7.19
 packages:
   - powerqueue
   - powerqueue-levelmem
+  - powerqueue-distributed
 extra-deps:
   - unagi-chan-0.4.0.0
+  - timespan-0.3.0.0
