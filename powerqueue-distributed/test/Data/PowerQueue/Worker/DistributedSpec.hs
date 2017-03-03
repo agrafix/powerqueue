@@ -65,23 +65,6 @@ specWorker =
                               pure ok
               result `shouldBe` CeeInvalidAuthResponse
               cancel slave
-              let nc2 =
-                      nc
-                      { wnc_authToken = AuthToken "ABC"
-                      , wnc_appVersion = AppVersion 123
-                      }
-              slave2 <-
-                  async $ launchWorkNode nc2 (getQueueWorker queue)
-              result2 <-
-                  atomically $
-                  do val <- readTVar errVar
-                     case val of
-                       Nothing -> retry
-                       Just ok ->
-                           do writeTVar errVar Nothing
-                              pure ok
-              result2 `shouldBe` CeeConnClosed
-              cancel slave2
               cancel master1
 
 nodeCfg :: Int -> WorkNodeConfig
