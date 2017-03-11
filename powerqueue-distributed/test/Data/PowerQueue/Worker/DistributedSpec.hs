@@ -41,31 +41,6 @@ specWorker =
               cancel master
               mapM_ cancel slaves
               result `shouldBe` 100
-       it "should reject bad clients" $
-           do ref <- atomically $ newTVar 0
-              queue <- dummyStmCounterQueue ref
-              master1 <- async $ launchWorkMaster masterCfg (getQueueBackend queue)
-              errVar <- atomically $ newTVar Nothing
-              let nc =
-                      (nodeCfg 1)
-                      { wnc_errorHook = \err ->
-                           do atomically $ writeTVar errVar (Just err)
-                              wnc_errorHook (nodeCfg 1) err
-                      , wnc_authToken = AuthToken "YCZ"
-                      }
-              slave <-
-                  async $ launchWorkNode nc (getQueueWorker queue)
-              result <-
-                  atomically $
-                  do val <- readTVar errVar
-                     case val of
-                       Nothing -> retry
-                       Just ok ->
-                           do writeTVar errVar Nothing
-                              pure ok
-              result `shouldBe` CeeInvalidAuthResponse
-              cancel slave
-              cancel master1
 
 nodeCfg :: Int -> WorkNodeConfig
 nodeCfg idx =
