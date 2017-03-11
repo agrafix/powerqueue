@@ -3,6 +3,18 @@ packages:
   - powerqueue
   - powerqueue-levelmem
   - powerqueue-distributed
+  - powerqueue-sqs
+  - location:
+      git: https://github.com/agrafix/aws-simple.git
+      commit: 665255297f603fc179aa2d193dc66d892efab05e
+    extra-dep: true
 extra-deps:
   - unagi-chan-0.4.0.0
   - timespan-0.3.0.0
+  - amazonka-core-1.4.5
+  - amazonka-1.4.5
+  - amazonka-s3-1.4.5
+  - amazonka-sqs-1.4.5
+  - http-client-0.5.5
+  - http-client-tls-0.3.3.1
+  - http-conduit-2.2.3

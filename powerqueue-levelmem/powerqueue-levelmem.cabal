@@ -1,5 +1,5 @@
 name:                powerqueue-levelmem
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            A high performance in memory and LevelDB backend for powerqueue
 description:         A high performance in memory and LevelDB backend for powerqueue
 homepage:            https://github.com/agrafix/powerqueue#readme
@@ -18,7 +18,7 @@ library
                    Data.PowerQueue.Backend.LevelMem
   build-depends:
                 base >= 4.7 && < 5
-              , powerqueue >= 0.1
+              , powerqueue >= 0.2
               , stm >= 2.4
               , stm-containers >= 0.2
               , unagi-chan >= 0.4
@@ -30,6 +30,7 @@ library
               , dlist >= 0.8
               , list-t >= 1
               , filepath >= 1.4
+              , timespan >= 0.3
   default-language:    Haskell2010
 
 test-suite powerqueue-levelmem-test

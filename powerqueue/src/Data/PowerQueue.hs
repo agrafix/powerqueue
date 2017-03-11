@@ -23,6 +23,7 @@ import Data.Bifunctor
 import Data.Functor.Contravariant
 import Data.Functor.Contravariant.Divisible
 import Data.IORef
+import Data.Time.TimeSpan
 import qualified Control.Concurrent.Chan as C
 
 -- | Result of the job
@@ -46,6 +47,10 @@ data QueueBackend j
       -- ^ mark a single job as confirmed
     , qb_rollback :: tx -> m ()
       -- ^ mark a single job as failed
+    , qb_reportProgress :: tx -> m ()
+      -- ^ report progress on a job
+    , qb_progressReportInterval :: !TimeSpan
+      -- ^ how often should progress be reported
     }
 
 -- | A very basic in memory backend using only data structures from the base library.
@@ -79,16 +84,20 @@ basicChanBackend =
                       case oldVal of
                         Just j -> C.writeChan jobChannel j
                         Nothing -> pure () -- should not really happen ...
+           , qb_reportProgress = const $ pure ()
+           , qb_progressReportInterval = hours 1
            }
 
 mapBackend :: (a -> b) -> (b -> a) -> QueueBackend a -> QueueBackend b
-mapBackend f g (QueueBackend qlift qenq qdeq qconf qroll) =
+mapBackend f g (QueueBackend qlift qenq qdeq qconf qroll rp intv) =
     QueueBackend
     { qb_lift = qlift
     , qb_enqueue = qenq . g
     , qb_dequeue = fmap (second f) qdeq
     , qb_confirm = qconf
     , qb_rollback = qroll
+    , qb_reportProgress = rp
+    , qb_progressReportInterval = intv
     }
 
 data QueueWorker j
@@ -164,11 +173,20 @@ workStep q = workStepInternal (q_backend q) (q_worker q)
 
 workStepInternal :: QueueBackend j -> QueueWorker j -> IO ()
 workStepInternal QueueBackend{..} QueueWorker{..} =
-    let acquire = qb_lift qb_dequeue
-        onError (txId, _) = qb_lift (qb_rollback txId)
-        go (txId, job) =
+    let acquire =
+            do v <- qb_lift qb_dequeue
+               pReport <-
+                   async $ forever $
+                   do sleepTS qb_progressReportInterval
+                      qb_lift $ qb_reportProgress (fst v)
+               pure (pReport, v)
+        onError (pg, (txId, _)) =
+            do cancel pg
+               qb_lift (qb_rollback txId)
+        go (pg, (txId, job)) =
             do execRes <-
                    try $ qw_execute job
+               cancel pg
                case execRes of
                  Left (_ :: SomeException) ->
                      qb_lift (qb_rollback txId)

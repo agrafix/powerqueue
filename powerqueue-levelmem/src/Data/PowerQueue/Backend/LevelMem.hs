@@ -17,6 +17,7 @@ import Control.Monad
 import Data.Maybe
 import Data.Monoid
 import Data.PowerQueue
+import Data.Time.TimeSpan
 import Data.Word
 import System.FilePath
 import qualified Control.Concurrent.Chan.Unagi.Bounded as C
@@ -266,6 +267,8 @@ newLevelMemBackend levelMem =
     , qb_dequeue = dequeue levelMem
     , qb_confirm = flip ack levelMem
     , qb_rollback = flip nack levelMem
+    , qb_progressReportInterval = hours 1
+    , qb_reportProgress = const $ pure ()
     }
 
 enqueue :: j -> LevelMem j -> IO Bool
