@@ -4,10 +4,6 @@ packages:
   - powerqueue-levelmem
   - powerqueue-distributed
   - powerqueue-sqs
-  - location:
-      git: https://github.com/agrafix/aws-simple.git
-      commit: 665255297f603fc179aa2d193dc66d892efab05e
-    extra-dep: true
 extra-deps:
   - unagi-chan-0.4.0.0
   - timespan-0.3.0.0
@@ -18,3 +14,4 @@ extra-deps:
   - http-client-0.5.5
   - http-client-tls-0.3.3.1
   - http-conduit-2.2.3
+  - aws-simple-0.4.0.0
